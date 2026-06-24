@@ -4,6 +4,7 @@ local panelsFolder = workspace:WaitForChild("MemeTestPanels")
 local soundsFolder = SoundService:WaitForChild("MemeSounds")
 
 local connectedPrompts = {}
+local currentSound = nil
 
 local function connectPanel(panel)
 	if not panel:IsA("BasePart") then
@@ -28,8 +29,14 @@ local function connectPanel(panel)
 			return
 		end
 
+		if currentSound then
+			currentSound:Stop()
+			currentSound.TimePosition = 0
+		end
+
 		sound:Stop()
 		sound.TimePosition = 0
+		currentSound = sound
 		SoundService:PlayLocalSound(sound)
 	end)
 end
