@@ -1,5 +1,5 @@
 local NewGenMemes = {
-	--texture id
+	-- Meme catalog: each row pairs a decal asset with its answer name and matching sound.
 	{id = 82989447980694, name = "Yara Yara Phonk", sound = "rbxassetid://85426854310748"},
 	{id = 121212267160037, name = "MUSTARD", sound = "rbxassetid://114510796098981"},
 	{id = 71816191478548, name = "MANGO", sound = "rbxassetid://125495161781334"},
@@ -22,16 +22,19 @@ local NewGenMemes = {
 	{id = 133352593078840, name = "Im a Chud", sound = "rbxassetid://130833513829620"},
 	{id = 103182238426704, name = "Low tier god", sound = "rbxassetid://101164855168823"},
 	{id = 98419210144688, name = "Blue shirt sturdy", sound = "rbxassetid://139852947270745"},
-	{id = 78913745918994, name = "Jackpot", sound = "rbxassetid://70451868618962"},
 	{id = 116112169031952, name = "Fairs", sound = "rbxassetid://137739021809040"},
-	{id = 95220612056928, name = "The ting goes", sound = "rbxassetid://89654100220227"},
+	{id = 95220612056928, name = "The ting goes", sound = "rbxassetid://129977856162950"},
 	{id = 117983880750570, name = "Agartha", sound = "rbxassetid://115136643884209"},
-	{id = 85462826391722, name = "Triple t", sound = "rbxassetid://70518661369484"},
+	{id = 85462826391722, name = "Triple t", sound = "rbxassetid://83451932284444"},
+	{id = 114999639737210, name = "Please speed", sound = "rbxassetid://139032821618339"},
+	{id = 126394751757170, name = "FlightBurp", sound = "rbxassetid://82522757310436"},
+	{id = 70847895557880, name = "OuuShi", sound = "rbxassetid://130496035380483"}
+	
 	
 	
 	
 
 	
-	-- ... 50+ memes total
+	-- Add new memes above using the same id/name/sound fields.
 }
 return NewGenMemes
