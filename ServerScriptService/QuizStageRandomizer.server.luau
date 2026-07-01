@@ -26,6 +26,7 @@ local rng = Random.new(os.time() + math.floor(os.clock() * 1000000))
 local killbrickConnections = {}
 local stageSpawns = {}
 local playerConnections = {}
+local playerStageTouchLocks = {}
 
 local function getOrCreateStageStat(player)
 	local leaderstats = player:FindFirstChild(LEADERSTATS_NAME)
@@ -62,6 +63,7 @@ local function updatePlayerRespawnLocation(player)
 end
 
 local function spawnCharacterAtPlayerStage(player, character)
+	playerStageTouchLocks[player] = {}
 	updatePlayerRespawnLocation(player)
 
 	local stageStat = getOrCreateStageStat(player)
@@ -85,6 +87,7 @@ local function setupPlayerStats(player)
 	if not playerConnections[player] then
 		playerConnections[player] = {
 			stageStat:GetPropertyChangedSignal("Value"):Connect(function()
+				playerStageTouchLocks[player] = {}
 				updatePlayerRespawnLocation(player)
 			end),
 
@@ -109,6 +112,7 @@ local function cleanupPlayerConnections(player)
 		connection:Disconnect()
 	end
 	playerConnections[player] = nil
+	playerStageTouchLocks[player] = nil
 end
 
 -- Copies a simple array so shuffling does not mutate the original source list.
@@ -439,6 +443,37 @@ local function advancePlayerStageFromPanel(player, panel)
 	end
 end
 
+local function resolvePlayerStageTouch(player, panel, humanoid)
+	local stageNumber = panel:GetAttribute("QuizStageNumber")
+	if typeof(stageNumber) ~= "number" then
+		return
+	end
+
+	local stageStat = getOrCreateStageStat(player)
+	if stageStat.Value ~= stageNumber then
+		return
+	end
+
+	local touchLocks = playerStageTouchLocks[player]
+	if not touchLocks then
+		touchLocks = {}
+		playerStageTouchLocks[player] = touchLocks
+	end
+
+	if touchLocks[stageNumber] then
+		return
+	end
+	touchLocks[stageNumber] = true
+
+	if panel:GetAttribute("IsKillbrick") == true then
+		if humanoid and humanoid.Health > 0 then
+			humanoid.Health = 0
+		end
+	else
+		advancePlayerStageFromPanel(player, panel)
+	end
+end
+
 local function configurePanelCollisionAndHazard(panel, isCorrect)
 	panel.CanCollide = false
 	panel.CanTouch = true
@@ -449,17 +484,10 @@ local function configurePanelCollisionAndHazard(panel, isCorrect)
 	end
 
 	killbrickConnections[panel] = panel.Touched:Connect(function(hit)
-		if panel:GetAttribute("IsKillbrick") ~= true then
-			local player = getPlayerFromHit(hit)
-			if player then
-				advancePlayerStageFromPanel(player, panel)
-			end
-			return
-		end
-
+		local player = getPlayerFromHit(hit)
 		local humanoid = getHumanoidFromHit(hit)
-		if humanoid and humanoid.Health > 0 then
-			humanoid.Health = 0
+		if player and humanoid then
+			resolvePlayerStageTouch(player, panel, humanoid)
 		end
 	end)
 end
