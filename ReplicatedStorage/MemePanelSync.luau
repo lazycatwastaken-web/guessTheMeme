@@ -40,22 +40,8 @@ local function titleCaseWord(word)
 	return word:sub(1, 1):upper() .. word:sub(2):lower()
 end
 
--- Reuses existing panel sound names when possible, otherwise creates a unique one.
+-- Derives stable sound names from the current catalog so stale panel attributes cannot drift.
 local function soundNameFromMeme(index, meme, usedNames)
-	local existingName = nil
-	local panelsFolder = Workspace:FindFirstChild(PANELS_FOLDER_NAME)
-	if panelsFolder then
-		local panel = panelsFolder:FindFirstChild(panelNameForIndex(index))
-		if panel then
-			existingName = panel:GetAttribute("MemeSoundName")
-		end
-	end
-
-	if typeof(existingName) == "string" and existingName ~= "" then
-		usedNames[existingName] = true
-		return existingName
-	end
-
 	local parts = {}
 	for part in tostring(meme.name or ""):gmatch("%w+") do
 		table.insert(parts, titleCaseWord(part))
@@ -200,6 +186,7 @@ local function removeExtraManagedSounds(soundsFolder, memeCount, usedSoundNames)
 		end
 	end
 end
+
 
 -- Main entry point: syncs the meme catalog into Workspace panels and SoundService sounds.
 function MemePanelSync.sync()

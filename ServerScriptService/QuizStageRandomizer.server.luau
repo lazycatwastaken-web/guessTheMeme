@@ -1,6 +1,8 @@
 -- Server script that fills each quiz stage with one correct meme and two decoys.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
+local soundService = game:GetService("SoundService")
+local soundFolder = soundService:WaitForChild("MemeSounds")
 
 -- Reuse the shared ReplicatedStorage sync so NewGenMemes stays the source of truth.
 local MemePanelSync = require(ReplicatedStorage:WaitForChild("MemePanelSync"))
@@ -14,6 +16,7 @@ local MEME_DECAL_NAME = "MemeDecal"
 --local DECAL_ROTATIONS = { 0, 90, 180, 270 }
 
 local rng = Random.new(os.time() + math.floor(os.clock() * 1000000))
+local killbrickConnections = {}
 
 -- Copies a simple array so shuffling does not mutate the original source list.
 local function copyArray(array)
@@ -128,6 +131,37 @@ local function clearPanelDecals(panel)
 	end
 end
 
+local function getHumanoidFromHit(hit)
+	local character = hit and hit:FindFirstAncestorWhichIsA("Model")
+	if not character then
+		return nil
+	end
+
+	return character:FindFirstChildWhichIsA("Humanoid")
+end
+
+local function configurePanelCollisionAndHazard(panel, isCorrect)
+	panel.CanCollide = false
+	panel.CanTouch = true
+	panel:SetAttribute("IsKillbrick", not isCorrect)
+
+	if killbrickConnections[panel] then
+		return
+	end
+
+	killbrickConnections[panel] = panel.Touched:Connect(function(hit)
+		
+		if panel:GetAttribute("IsKillbrick") ~= true then
+			return
+		end
+
+		local humanoid = getHumanoidFromHit(hit)
+		if humanoid and humanoid.Health > 0 then
+			humanoid.Health = 0
+		end
+	end)
+end
+
 -- Stores quiz metadata on panels, decals, buttons, and prompts for other scripts.
 local function setMemeAttributes(instance, meme, isCorrect, stageNumber, optionNumber)
 	instance:SetAttribute("QuizStageNumber", stageNumber)
@@ -143,6 +177,7 @@ end
 local function applyMemeToPanel(panelInfo, meme, isCorrect, stageNumber)
 	local panel = panelInfo.part
 	clearPanelDecals(panel)
+	configurePanelCollisionAndHazard(panel, isCorrect)
 
 	local decal = meme.decal:Clone()
 

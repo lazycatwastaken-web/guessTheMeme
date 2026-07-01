@@ -1,13 +1,26 @@
 -- Local client script that plays meme sounds when panel or answer prompts are triggered.
+local Players = game:GetService("Players")
 local SoundService = game:GetService("SoundService")
+local ImageIDs = require(game.ReplicatedStorage:WaitForChild("ScreenGuiPics"))
 
 -- Generated folders that contain the synced meme panels and Sound instances.
+local localPlayer = Players.LocalPlayer
 local panelsFolder = workspace:WaitForChild("MemeTestPanels")
 local soundsFolder = SoundService:WaitForChild("MemeSounds")
 
 -- Connection tracking prevents duplicate prompt listeners as objects replicate in.
 local connectedPrompts = {}
+local connectedStagePanels = {}
 local watchedButtons = {}
+
+local function stopMemeSounds()
+	for _, sound in soundsFolder:GetChildren() do
+		if sound:IsA("Sound") then
+			sound:Stop()
+			sound.TimePosition = 0
+		end
+	end
+end
 
 -- Rewinds the selected sound and plays it locally.
 local function playMemeSound(soundName)
@@ -15,9 +28,7 @@ local function playMemeSound(soundName)
 		return
 	end
 	
-	for _, sound in soundsFolder:GetChildren() do
-		sound:Stop()
-	end
+	stopMemeSounds()
 
 	local sound = soundsFolder:FindFirstChild(soundName)
 	if not sound or sound.SoundId == "" then
@@ -25,9 +36,12 @@ local function playMemeSound(soundName)
 	end
 	
 
-	sound:Stop()
-	sound.TimePosition = 0
 	sound:Play()
+end
+
+local function hitBelongsToLocalCharacter(hit)
+	local character = localPlayer.Character
+	return character and hit and hit:IsDescendantOf(character)
 end
 
 -- Hooks one ProximityPrompt to a callback that resolves which meme sound to play.
@@ -40,6 +54,53 @@ local function connectPrompt(prompt, getSoundName)
 	prompt.Triggered:Connect(function()
 		playMemeSound(getSoundName())
 	end)
+end
+
+local function connectStagePanel(panel)
+	if not panel:IsA("BasePart") or not panel.Name:match("^BlackPanel%d+$") then
+		return
+	end
+
+	local stage = panel.Parent
+	if not stage or not stage:IsA("Model") or not stage.Name:match("^Frame%d+$") then
+		return
+	end
+
+	if connectedStagePanels[panel] then
+		return
+	end
+	connectedStagePanels[panel] = true
+
+	panel.Touched:Connect(function(hit)
+		if hitBelongsToLocalCharacter(hit) then
+			stopMemeSounds()
+		end
+		print("Connect Stage Panel function triggered")
+		--Displays random image on screen
+		local images = {}
+		for _, image in ImageIDs do
+			table.insert(images, image.id)
+		end
+		local randomImage = images[math.random(1, #images)]
+		local screenGui = localPlayer:WaitForChild("PlayerGui"):WaitForChild("ScreenGui")
+		local imageLabel = screenGui:WaitForChild("Jumpscare")
+		imageLabel.Image = "rbxassetid://" .. randomImage
+		imageLabel.Visible = true
+		task.delay(2, function()
+			imageLabel.Visible = false
+		end)
+	end)
+end
+
+local function connectStagePanelsIn(instance)
+	if instance:IsA("BasePart") then
+		connectStagePanel(instance)
+		return
+	end
+
+	for _, descendant in ipairs(instance:GetDescendants()) do
+		connectStagePanel(descendant)
+	end
 end
 
 -- Connects generated meme test panels that carry a PlaySoundPrompt.
@@ -98,14 +159,20 @@ end
 
 for _, child in ipairs(workspace:GetChildren()) do
 	connectButton(child)
+	connectStagePanelsIn(child)
 end
 
 -- Watch for new panels and buttons that replicate after the initial pass.
 panelsFolder.ChildAdded:Connect(connectPanel)
-workspace.ChildAdded:Connect(connectButton)
+workspace.ChildAdded:Connect(function(child)
+	connectButton(child)
+	connectStagePanelsIn(child)
+end)
 
 -- Catch prompts that appear under existing button models after their parent arrived.
 workspace.DescendantAdded:Connect(function(descendant)
+	connectStagePanel(descendant)
+
 	if not descendant:IsA("ProximityPrompt") then
 		return
 	end
@@ -123,6 +190,7 @@ task.spawn(function()
 		task.wait(1)
 		for _, child in ipairs(workspace:GetChildren()) do
 			connectButton(child)
+			connectStagePanelsIn(child)
 		end
 	end
 end)
