@@ -1,7 +1,7 @@
 -- Local client script that plays meme sounds when panel or answer prompts are triggered.
 local Players = game:GetService("Players")
 local SoundService = game:GetService("SoundService")
-local ImageIDs = require(game.ReplicatedStorage:WaitForChild("ScreenGuiPics"))
+--local ImageIDs = require(game.ReplicatedStorage:WaitForChild("ScreenGuiPics"))
 
 -- Generated folders that contain the synced meme panels and Sound instances.
 local localPlayer = Players.LocalPlayer
@@ -76,19 +76,6 @@ local function connectStagePanel(panel)
 			stopMemeSounds()
 		end
 		print("Connect Stage Panel function triggered")
-		--Displays random image on screen
-		local images = {}
-		for _, image in ImageIDs do
-			table.insert(images, image.id)
-		end
-		local randomImage = images[math.random(1, #images)]
-		local screenGui = localPlayer:WaitForChild("PlayerGui"):WaitForChild("ScreenGui")
-		local imageLabel = screenGui:WaitForChild("Jumpscare")
-		imageLabel.Image = "rbxassetid://" .. randomImage
-		imageLabel.Visible = true
-		task.delay(2, function()
-			imageLabel.Visible = false
-		end)
 	end)
 end
 
